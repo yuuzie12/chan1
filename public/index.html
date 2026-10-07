@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AnonChan • Fórum Anônimo</title>
+<link rel="stylesheet" href="/css/style.css">
+<link rel="icon" href="/img/mascot-light.svg">
+</head>
+<body>
+<header class="topbar">
+  <div class="container">
+    <a href="/" class="logo">
+      <img src="/img/mascot-light.svg" class="mascot" alt="mascote">
+      <span>AnonChan</span>
+    </a>
+    <nav class="nav">
+      <a href="/">Início</a>
+      <a href="/catalog.html">Catálogo</a>
+      <a href="/search.html">Pesquisar</a>
+      <a href="/favorites.html">Favoritos</a>
+      <a href="/admin.html" class="admin-link hidden">Admin</a>
+    </nav>
+    <div class="actions">
+      <input id="global-search" placeholder="Pesquisar...">
+      <button id="theme-toggle" title="Alternar tema">🌙</button>
+      <span id="user-area"></span>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+  <section class="hero">
+    <h1>Bem-vindo ao <span class="accent">AnonChan</span></h1>
+    <p>Um fórum anônimo com estética nostálgica dos anos 2000.</p>
+  </section>
+
+  <section>
+    <h2>Boards</h2>
+    <div id="boards-grid" class="boards-grid">Carregando...</div>
+  </section>
+</main>
+
+<footer>
+  <div class="container">© AnonChan • feito com nostalgia</div>
+</footer>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/socket.js"></script>
+<script src="/js/app.js"></script>
+</body>
+</html>
