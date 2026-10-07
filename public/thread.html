@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tópico • AnonChan</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="container">
+    <a href="/" class="logo"><img src="/img/mascot-light.svg" class="mascot"><span>AnonChan</span></a>
+    <div class="actions">
+      <button id="fav-btn">⭐ Favoritar</button>
+      <button id="theme-toggle">🌙</button>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+  <h1 id="thread-title">Tópico</h1>
+  <div id="posts"></div>
+
+  <h2>Responder</h2>
+  <form id="reply-form" class="post-form">
+    <textarea name="body" placeholder="Resposta (use >>ID para citar)" required></textarea>
+    <input type="file" name="image" accept="image/*">
+    <button type="submit">Responder</button>
+  </form>
+</main>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/socket.js"></script>
+<script src="/js/app.js"></script>
+<script>
+const threadId = new URLSearchParams(location.search).get('id');
+let threadData = null;
+
+async function loadThread() {
+  const data = await api('/api/threads/' + threadId);
+  threadData = data;
+  document.getElementById('thread-title').textContent = 
+    `/${data.thread.board_slug}/ - ${data.thread.subject || '(sem título)'}`;
+  renderPosts([data.thread, ...data.posts]);
+
+  socket.emit('join', 'thread:' + threadId);
+  document.addEventListener('realtime:new_post', (e) => {
+    if (e.detail.thread_id == threadId) {
+      document.getElementById('posts').insertAdjacentHTML('beforeend', postHtml(e.detail, false));
+    }
+  });
+}
+
+function postHtml(p, isOp) {
+  const body = escapeHtml(p.body).replace(/&gt;&gt;(\d+)/g, 
+    '<a class="quote" href="#p$1">&gt;&gt;$1</a>');
+  return `<div class="post" id="p${p.id}">
+    <div class="meta">
+      <span class="post-id">#${p.id}</span>
+      ${isOp ? '• OP' : ''} 
+      ${new Date((p.created_at||Math.floor(Date.now()/1000))*1000).toLocaleString()}
+    </div>
+    <div class="body">${body}</div>
+    ${p.image ? `<img src="/uploads/${p.image}" loading="lazy" alt="">` : ''}
+  </div>`;
+}
+function renderPosts(list) {
+  document.getElementById('posts').innerHTML = list.map((p,i)=>postHtml(p,i===0)).join('');
+}
+function escapeHtml(s){return (s||'').replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));}
+
+document.getElementById('reply-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  try {
+    await api('/api/threads/' + threadId + '/reply', { method: 'POST', body: fd });
+    e.target.reset();
+    loadThread();
+  } catch(err) { alert(err.message); }
+});
+
+document.getElementById('fav-btn').addEventListener('click', async () => {
+  try {
+    await api('/api/favorites/' + threadId, { method: 'POST' });
+    alert('Adicionado aos favoritos');
+  } catch(e) { alert(e.message); }
+});
+
+if (threadId) loadThread();
+</script>
+</body>
+</html>
