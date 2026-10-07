@@ -3,7 +3,6 @@ const express = require('express');
 const http = require('http');
 const path = require('path');
 const session = require('express-session');
-const SQLiteStore = require('connect-sqlite3')(session);
 const cookieParser = require('cookie-parser');
 const helmet = require('helmet');
 const compression = require('compression');
@@ -39,14 +38,13 @@ app.use(cookieParser());
 
 // Sessão
 app.use(session({
-  store: new SQLiteStore({ db: 'sessions.db', dir: './data' }),
   secret: process.env.SESSION_SECRET || 'dev-secret-change-me',
   resave: false,
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
     sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
+    secure: false,   // Termux nao usa HTTPS
     maxAge: 1000 * 60 * 60 * 24 * 7
   }
 }));
