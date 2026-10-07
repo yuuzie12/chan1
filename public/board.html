@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Board • AnonChan</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="container">
+    <a href="/" class="logo"><img src="/img/mascot-light.svg" class="mascot"><span>AnonChan</span></a>
+    <nav class="nav"><a href="/">Início</a></nav>
+    <div class="actions"><button id="theme-toggle">🌙</button></div>
+  </div>
+</header>
+
+<main class="container">
+  <h1 id="board-title">/board/</h1>
+  <p id="board-desc" style="color:var(--muted)"></p>
+
+  <h2>Novo tópico</h2>
+  <form id="new-thread" class="post-form">
+    <input type="text" name="subject" placeholder="Assunto (opcional)">
+    <textarea name="body" placeholder="Escreva algo..." required></textarea>
+    <input type="file" name="image" accept="image/*">
+    <button type="submit">Criar tópico</button>
+  </form>
+
+  <h2>Tópicos</h2>
+  <div id="thread-list">Carregando...</div>
+</main>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/socket.js"></script>
+<script src="/js/app.js"></script>
+<script>
+const params = new URLSearchParams(location.search);
+const slug = params.get('slug');
+let boardId = null;
+
+async function loadBoard() {
+  const data = await api('/api/boards/' + slug);
+  boardId = data.board.id;
+  document.getElementById('board-title').textContent = `/${data.board.slug}/ - ${data.board.name}`;
+  document.getElementById('board-desc').textContent = data.board.description || '';
+  renderThreads(data.threads);
+
+  socket.emit('join', 'board:' + boardId);
+  document.addEventListener('realtime:new_thread', (e) => {
+    const t = e.detail;
+    if (t.board_id === boardId) {
+      const list = document.getElementById('thread-list');
+      list.insertAdjacentHTML('afterbegin', threadCard(t));
+    }
+  });
+}
+
+function threadCard(t) {
+  return `<a class="board-card" href="/thread.html?id=${t.id}">
+    <h3>${t.subject || '(sem título)'}</h3>
+    <p>${escapeHtml((t.body||'').slice(0,120))}</p>
+    <p>${t.reply_count || 0} respostas</p>
+  </a>`;
+}
+function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));}
+
+function renderThreads(threads) {
+  const list = document.getElementById('thread-list');
+  if (!threads.length) { list.innerHTML = '<p>Sem tópicos ainda.</p>'; return; }
+  list.innerHTML = threads.map(threadCard).join('');
+}
+
+document.getElementById('new-thread').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  fd.append('board_id', boardId);
+  try {
+    await api('/api/threads', { method: 'POST', body: fd });
+    e.target.reset();
+    loadBoard();
+  } catch(err) { alert(err.message); }
+});
+
+if (slug) loadBoard();
+else document.getElementById('board-title').textContent = 'Board inválido';
+</script>
+</body>
+</html>
