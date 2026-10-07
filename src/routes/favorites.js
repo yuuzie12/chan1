@@ -21,4 +21,11 @@ router.post('/:threadId', requireAuth, (req, res) => {
   res.json({ ok: true });
 });
 
-router
+router.delete('/:threadId', requireAuth, (req, res) => {
+  const db = getDb();
+  db.prepare('DELETE FROM favorites WHERE user_id=? AND thread_id=?')
+    .run(req.user.id, req.params.threadId);
+  res.json({ ok: true });
+});
+
+module.exports = router;
